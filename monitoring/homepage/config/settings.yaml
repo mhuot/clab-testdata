@@ -1,0 +1,8 @@
+---
+# Homepage configuration file
+
+title: Network Lab Dashboard
+language: en
+headerStyle: clean
+theme: dark
+color: indigo

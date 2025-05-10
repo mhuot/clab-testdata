@@ -1,0 +1,18 @@
+# Environment variables file (contains paths specific to local environment)
+.env
+
+# Docker compose override file
+docker-compose.override.yml
+
+# Logs
+*.log
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Editor specific files
+.vscode/
+.idea/
+*.swp
+*.swo

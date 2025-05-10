@@ -1,0 +1,74 @@
+name: sine-wave-lab
+
+topology:
+  nodes:
+    host1:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip address add 10.1.1.1/24 dev eth1
+        - ip route add 10.2.2.0/24 via 10.1.1.2
+      binds:
+        - ./scripts/host1.sh:/host.sh
+    
+    router1:
+      kind: linux
+      image: frrouting/frr:latest
+      ports:
+        - 8000:8000
+      binds:
+        - ./router1/daemons:/etc/frr/daemons
+        - ./router1/snmpd.conf:/etc/snmp/snmpd.conf
+      exec:
+        - apt-get update && apt-get install -y snmpd
+      mgmt_ipv4: 172.20.20.11
+    
+    router2:
+      kind: linux
+      image: frrouting/frr:latest
+      ports:
+        - 8001:8000
+      binds:
+        - ./router2/daemons:/etc/frr/daemons
+        - ./router2/snmpd.conf:/etc/snmp/snmpd.conf
+      exec:
+        - apt-get update && apt-get install -y snmpd
+      mgmt_ipv4: 172.20.20.12
+    
+    host2:
+      kind: linux
+      image: alpine:latest
+      exec:
+        - ip address add 10.2.2.2/24 dev eth1
+        - ip route add 10.1.1.0/24 via 10.2.2.1
+      binds:
+        - ./scripts/host2.sh:/host.sh
+
+    # Monitoring node with Grafana, Prometheus, SNMP Exporter, and Homepage
+    monitor:
+      kind: linux
+      image: ubuntu:latest
+      ports:
+        - 3000:3000  # Grafana
+        - 9090:9090  # Prometheus
+        - 9116:9116  # SNMP Exporter
+        - 3001:3000  # Homepage
+      binds:
+        - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+        - ./monitoring/snmp_exporter/snmp.yml:/etc/snmp_exporter/snmp.yml
+        - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+        - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+        - ./monitoring/homepage/config:/app/config
+        - ./monitoring/homepage/icons:/app/public/icons
+      env:
+        GF_SECURITY_ADMIN_PASSWORD: admin
+        GF_USERS_ALLOW_SIGN_UP: "false"
+      exec:
+        - apt-get update && apt-get install -y wget curl gnupg netcat
+      mgmt_ipv4: 172.20.20.100
+
+  links:
+    - endpoints: ["host1:eth1", "router1:eth1"]
+    - endpoints: ["router1:eth2", "router2:eth1"]
+    - endpoints: ["router2:eth2", "host2:eth1"]
+    - endpoints: ["monitor:eth1", "router1:eth3"]

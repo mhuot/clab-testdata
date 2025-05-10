@@ -1,0 +1,13 @@
+---
+# Homepage widgets configuration
+
+- resources:
+    cpu: true
+    memory: true
+    # disk: true
+
+# - information:
+#     content: >-
+#       ## Network Lab
+#       This is a Docker Compose setup with hosts generating sine wave traffic patterns.
+#       The monitoring tools allow you to visualize the traffic patterns in real-time.

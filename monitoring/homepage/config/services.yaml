@@ -1,0 +1,27 @@
+---
+# Homepage services configuration file
+# Documentation: https://gethomepage.dev/latest/configs/services/
+
+- Available Services:
+
+  - Grafana:
+      icon: grafana.png
+      href: http://localhost:3000
+      description: Monitoring Dashboard
+  - Prometheus:
+      href: http://localhost:9090
+      description: Time Series Database
+      icon: prometheus.svg      
+  - Prometheus SNMP Exporter:
+      href: http://localhost:9116
+      description: Exporter with the SNMP data
+      icon: prometheus.svg
+  - Router1:
+      href: http://192.168.100.10
+      description: Alpine Router 1
+      icon: router.png
+
+  - Router2:
+      href: http://192.168.100.11
+      description: Alpine Router 2
+      icon: router.png

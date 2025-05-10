@@ -1,0 +1,202 @@
+services:
+  # Host 1 generating sine wave traffic
+  host1:
+    image: alpine:latest
+    platform: linux/arm64
+    container_name: sine-lab-host1
+    privileged: true
+    networks:
+      net1:
+        ipv4_address: 10.1.1.1
+    volumes:
+      - ./scripts/host1.sh:/host.sh
+    extra_hosts:
+      - "router1:10.1.1.2"
+      - "router2:192.168.0.2"
+    command: sh -c "chmod +x /host.sh && /host.sh"
+    restart: unless-stopped
+
+  # Router 1 - Arista cEOS
+  router1:
+    image: ceos:${CEOS_VERSION:-4.33.1}
+    container_name: sine-lab-router1
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    networks:
+      mgmt:
+        ipv4_address: 192.168.100.10
+    volumes:
+      - ./router1/config:/mnt/flash
+    environment:
+      - INTFTYPE=eth
+      - ETBA=1
+      - SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1
+      - CEOS=1
+      - EOS_PLATFORM=ceoslab
+      - container=docker
+      - MAPETH0=1
+    ports:
+      - "2001:22" # SSH
+      - "8000:80" # Web Interface
+    hostname: router1
+    tty: true
+    restart: unless-stopped
+
+  # Router 2 - Arista cEOS
+  router2:
+    image: ceos:${CEOS_VERSION:-4.33.1}
+    container_name: sine-lab-router2
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    networks:
+      mgmt:
+        ipv4_address: 192.168.100.11
+      net2:
+        ipv4_address: 192.168.0.2
+      net4:
+        ipv4_address: 10.2.2.1
+    volumes:
+      - ./router2/config:/mnt/flash
+    environment:
+      - INTFTYPE=eth
+      - ETBA=1
+      - SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1
+      - CEOS=1
+      - EOS_PLATFORM=ceoslab
+      - container=docker
+      - MAPETH0=1
+    ports:
+      - "2002:22" # SSH
+      - "8001:80" # Web Interface
+    hostname: router2
+    tty: true
+    restart: unless-stopped
+
+  # Host 2 generating offset sine wave traffic
+  host2:
+    image: alpine:latest
+    platform: linux/arm64
+    container_name: sine-lab-host2
+    privileged: true
+    networks:
+      net4:
+        ipv4_address: 10.2.2.2
+    volumes:
+      - ./scripts/host2.sh:/host.sh
+    extra_hosts:
+      - "router1:192.168.0.1"
+      - "router2:10.2.2.1"
+    command: sh -c "chmod +x /host.sh && /host.sh"
+    restart: unless-stopped
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    platform: linux/arm64
+    container_name: sine-lab-grafana
+    networks:
+      net3:
+        ipv4_address: 172.30.0.10
+      mgmt:
+        ipv4_address: 192.168.100.20
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000" # Grafana
+    restart: unless-stopped
+
+  # Prometheus for metrics collection
+  prometheus:
+    image: prom/prometheus:latest
+    platform: linux/arm64
+    container_name: sine-lab-prometheus
+    networks:
+      net3:
+        ipv4_address: 172.30.0.11
+      mgmt:
+        ipv4_address: 192.168.100.21
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090" # Prometheus
+    command: --config.file=/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+
+  # SNMP exporter for network metrics
+  snmp-exporter:
+    image: prom/snmp-exporter:latest
+    platform: linux/arm64
+    container_name: sine-lab-snmp-exporter
+    networks:
+      net3:
+        ipv4_address: 172.30.0.12
+      mgmt:
+        ipv4_address: 192.168.100.22
+    volumes:
+      - ./monitoring/snmp_exporter/snmp.yml:/etc/snmp_exporter/snmp.yml
+    ports:
+      - "9116:9116" # SNMP Exporter
+    restart: unless-stopped
+
+  # Homepage dashboard
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    platform: linux/arm64
+    container_name: sine-lab-homepage
+    networks:
+      net3:
+        ipv4_address: 172.30.0.13
+      mgmt:
+        ipv4_address: 192.168.100.23
+    volumes:
+      - ./monitoring/homepage/config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock:ro # For Docker integration
+    environment:
+      - HOMEPAGE_ALLOWED_HOSTS=*
+    ports:
+      - "3001:3000" # Homepage
+    restart: unless-stopped
+
+networks:
+  # Management network
+  mgmt:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24
+
+  # Network between host1 and router1
+  net1:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.1.1.0/24
+  
+  # Network between router1 and router2
+  net2:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.0.0/24
+  
+  # Network between router1 and monitoring
+  net3:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+  
+  # Network between router2 and host2
+  net4:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.2.2.0/24
