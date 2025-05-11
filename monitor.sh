@@ -15,11 +15,20 @@ if docker ps | grep -q sine-lab-router1; then
     
     # Check interfaces on Router 1
     echo -e "\n${YELLOW}Router 1 interfaces:${NC}"
-    docker exec sine-lab-router1 Cli -c "show ip interface brief" || echo -e "${RED}Failed to get interface status${NC}"
+
+    # Create a temporary command file
+    echo "enable
+show ip interface brief" > /tmp/router1_cmd.txt
+    # Execute it by sending the file to the container and running Cli with it
+    docker cp /tmp/router1_cmd.txt sine-lab-router1:/tmp/cmd.txt
+    docker exec sine-lab-router1 bash -c "Cli < /tmp/cmd.txt" || echo -e "${RED}Failed to get interface status${NC}"
 
     # Check routing table on Router 1
     echo -e "\n${YELLOW}Router 1 routing table:${NC}"
-    docker exec sine-lab-router1 Cli -c "show ip route" || echo -e "${RED}Failed to get routing table${NC}"
+    echo "enable
+show ip route" > /tmp/router1_cmd.txt
+    docker cp /tmp/router1_cmd.txt sine-lab-router1:/tmp/cmd.txt
+    docker exec sine-lab-router1 bash -c "Cli < /tmp/cmd.txt" || echo -e "${RED}Failed to get routing table${NC}"
 else
     echo -e "${RED}Router 1 is not running${NC}"
 fi
@@ -31,11 +40,20 @@ if docker ps | grep -q sine-lab-router2; then
     
     # Check interfaces on Router 2
     echo -e "\n${YELLOW}Router 2 interfaces:${NC}"
-    docker exec sine-lab-router2 Cli -c "show ip interface brief" || echo -e "${RED}Failed to get interface status${NC}"
+
+    # Create a temporary command file
+    echo "enable
+show ip interface brief" > /tmp/router2_cmd.txt
+    # Execute it by sending the file to the container and running Cli with it
+    docker cp /tmp/router2_cmd.txt sine-lab-router2:/tmp/cmd.txt
+    docker exec sine-lab-router2 bash -c "Cli < /tmp/cmd.txt" || echo -e "${RED}Failed to get interface status${NC}"
 
     # Check routing table on Router 2
     echo -e "\n${YELLOW}Router 2 routing table:${NC}"
-    docker exec sine-lab-router2 Cli -c "show ip route" || echo -e "${RED}Failed to get routing table${NC}"
+    echo "enable
+show ip route" > /tmp/router2_cmd.txt
+    docker cp /tmp/router2_cmd.txt sine-lab-router2:/tmp/cmd.txt
+    docker exec sine-lab-router2 bash -c "Cli < /tmp/cmd.txt" || echo -e "${RED}Failed to get routing table${NC}"
 else
     echo -e "${RED}Router 2 is not running${NC}"
 fi

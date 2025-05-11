@@ -5,7 +5,6 @@ spanning-tree mode mstp
 !
 no aaa root
 !
-! Configure interfaces for each network
 interface Ethernet1
    description Connection to Host1
    no switchport
@@ -24,26 +23,16 @@ interface Ethernet3
 interface Management0
    ip address 192.168.100.10/24
 !
-! Enable IP routing
 ip routing
 !
-! Add static route to Host2 subnet via Router2
 ip route 10.2.2.0/24 192.168.0.2
 !
 ! SNMP Configuration
 snmp-server community public ro
 snmp-server vrf default
 !
-! Enable API and SSH access
+! Allow connections
 management api http-commands
-   no shutdown
-!
-! Configure AAA for SSH access
-aaa authorization exec default local
-!
-username admin privilege 15 role network-admin secret admin
-!
-management ssh
    no shutdown
 !
 end
