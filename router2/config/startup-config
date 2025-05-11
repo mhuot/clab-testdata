@@ -3,7 +3,7 @@ hostname router2
 !
 spanning-tree mode mstp
 !
-no aaa root
+username arista privilege 15 secret 0 arista
 !
 interface Ethernet1
    description Connection to Router1

@@ -7,13 +7,6 @@ if [ ! -f .env ]; then
     echo "Using default image path or command line argument if provided."
 fi
 
-echo "Setting up Arista cEOS environment..."
-if [ -n "$1" ]; then
-    ./setup-arista.sh "$1"
-else
-    ./setup-arista.sh
-fi
-
 echo "Starting the sine wave network lab with Docker Compose..."
 docker compose up -d
 
