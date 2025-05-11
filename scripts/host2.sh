@@ -1,6 +1,9 @@
 #!/bin/sh
-# Host 2 script to generate offset sine wave traffic pattern 
-apk add --no-cache coreutils bc python3
+# Host 2 script to generate offset sine wave traffic pattern
+apk add --no-cache coreutils bc python3 iproute2
+
+# Add route to reach Host1 through Router2
+ip route add 172.20.0.0/24 via 172.30.0.2
 
 python3 -c '
 import time
@@ -10,8 +13,8 @@ import subprocess
 from datetime import datetime
 
 # Target IP address - uses router as next hop
-TARGET_IP = "10.1.1.1"
-ROUTER_IP = "10.2.2.1"  # No need to add route, just use existing network
+TARGET_IP = "172.20.0.3"  # Host1 IP
+ROUTER_IP = "172.30.0.2"  # Router2 IP in net3
 
 while True:
     # Calculate the sine wave value (0-100 range) with phase offset

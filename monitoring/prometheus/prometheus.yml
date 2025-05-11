@@ -5,11 +5,11 @@ global:
 scrape_configs:
   - job_name: 'snmp_router1'
     static_configs:
-      - targets: ['10.1.1.2']
+      - targets: ['172.10.0.3']
     metrics_path: /snmp
     params:
       module: [if_mib]
-      target: ['10.1.1.2']
+      target: ['172.10.0.3']
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target
@@ -20,11 +20,11 @@ scrape_configs:
 
   - job_name: 'snmp_router2'
     static_configs:
-      - targets: ['10.2.2.1']
+      - targets: ['172.10.0.2']
     metrics_path: /snmp
     params:
       module: [if_mib]
-      target: ['10.2.2.1']
+      target: ['172.10.0.2']
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

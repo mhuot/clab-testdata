@@ -30,7 +30,9 @@ services:
     privileged: true
     volumes:
       - ./scripts/host1.sh:/host.sh
-    command: sh -c "chmod +x /host.sh && /host.sh"
+    command: sh -c "apk add --no-cache openssh && echo 'root:password' | chpasswd && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && ssh-keygen -A && /usr/sbin/sshd && chmod +x /host.sh && /host.sh"
+    ports:
+      - "2221:22" # SSH
     restart: unless-stopped
     networks:
       - net2
@@ -95,7 +97,9 @@ services:
     privileged: true
     volumes:
       - ./scripts/host2.sh:/host.sh
-    command: sh -c "chmod +x /host.sh && /host.sh"
+    command: sh -c "apk add --no-cache openssh && echo 'root:password' | chpasswd && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && ssh-keygen -A && /usr/sbin/sshd && chmod +x /host.sh && /host.sh"
+    ports:
+      - "2222:22" # SSH
     restart: unless-stopped
     networks:
       - net3
