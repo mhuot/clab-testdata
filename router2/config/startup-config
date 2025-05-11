@@ -6,21 +6,21 @@ spanning-tree mode mstp
 username arista privilege 15 secret 0 arista
 !
 interface Ethernet1
-   description Connection to Router1
+   description Connection to Router1 (net1)
    no switchport
-   ip address 192.168.0.2/24
+   ip address 172.10.0.2/24
 !
 interface Ethernet2
-   description Connection to Host2
+   description Connection to Host2 and monitoring (net3)
    no switchport
-   ip address 10.2.2.1/24
+   ip address 172.30.0.2/24
 !
 interface Management0
-   ip address 192.168.100.11/24
+   ip address 192.168.100.3/24
 !
 ip routing
 !
-ip route 10.1.1.0/24 192.168.0.1
+ip route 172.20.0.0/24 172.10.0.3
 !
 ! SNMP Configuration
 snmp-server community public ro
