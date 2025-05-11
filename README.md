@@ -63,6 +63,18 @@ The topology consists of:
   - SNMP Exporter for network metrics
   - Homepage dashboard for easy access to all services
 
+## Adding Arista Image[^1]
+[^1]: This section was borrowed from https://netlab.tools/labs/ceos/
+1. Download cEOS from Arista Software Download page (registration/login required)
+2. The downloaded file is a xzipped tar file. If it’s saved as .tar file (that’s what Chrome on MacOS does), rename it to .tar.xz file
+3. Unzip the file with unxz filename
+
+cEOS tar archive does not contain the container image name (repository and tag); you have to set them when importing the archive into Docker image repository. 
+
+Install the Docker image with docker image import <tar-filename> <tag>, for example docker image import cEOS64-lab-4.31.2F.tar ceos:4.31.2F
+
+
+
 ## Usage
 
 1. Run the lab using Docker Compose (with the image path from the `.env` file):

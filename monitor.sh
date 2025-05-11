@@ -16,7 +16,7 @@ if docker ps | grep -q sine-lab-router1; then
     # Check interfaces on Router 1
     echo -e "\n${YELLOW}Router 1 interfaces:${NC}"
     docker exec sine-lab-router1 Cli -c "show ip interface brief" || echo -e "${RED}Failed to get interface status${NC}"
-    
+
     # Check routing table on Router 1
     echo -e "\n${YELLOW}Router 1 routing table:${NC}"
     docker exec sine-lab-router1 Cli -c "show ip route" || echo -e "${RED}Failed to get routing table${NC}"
@@ -32,7 +32,7 @@ if docker ps | grep -q sine-lab-router2; then
     # Check interfaces on Router 2
     echo -e "\n${YELLOW}Router 2 interfaces:${NC}"
     docker exec sine-lab-router2 Cli -c "show ip interface brief" || echo -e "${RED}Failed to get interface status${NC}"
-    
+
     # Check routing table on Router 2
     echo -e "\n${YELLOW}Router 2 routing table:${NC}"
     docker exec sine-lab-router2 Cli -c "show ip route" || echo -e "${RED}Failed to get routing table${NC}"

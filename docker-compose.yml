@@ -18,35 +18,27 @@ services:
 
   # Router 1 - Arista cEOS
   router1:
-    image: ceos:${CEOS_VERSION:-4.33.1}
+    image: ceos:4.34.0F-EFT2
     container_name: sine-lab-router1
     privileged: true
     cap_add:
       - NET_ADMIN
       - SYS_ADMIN
-    networks:
-      mgmt:
-        ipv4_address: 192.168.100.10
-    volumes:
-      - ./router1/config:/mnt/flash
-    environment:
-      - INTFTYPE=eth
-      - ETBA=1
-      - SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1
-      - CEOS=1
-      - EOS_PLATFORM=ceoslab
-      - container=docker
-      - MAPETH0=1
+    env_file:
+      - ./ceos.env
+    tmpfs:
+      - /mnt/flash
     ports:
-      - "2001:22" # SSH
-      - "8000:80" # Web Interface
+      - "2201:22" # SSH
+      - "8100:80" # Web Interface
     hostname: router1
     tty: true
     restart: unless-stopped
+    command: /sbin/init systemd.setenv=INTFTYPE=eth systemd.setenv=ETBA=1 systemd.setenv=SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 systemd.setenv=CEOS=1 systemd.setenv=EOS_PLATFORM=ceoslab systemd.setenv=container=docker
 
   # Router 2 - Arista cEOS
   router2:
-    image: ceos:${CEOS_VERSION:-4.33.1}
+    image: ceos:4.34.0F-EFT2
     container_name: sine-lab-router2
     privileged: true
     cap_add:
@@ -59,22 +51,17 @@ services:
         ipv4_address: 192.168.0.2
       net4:
         ipv4_address: 10.2.2.1
-    volumes:
-      - ./router2/config:/mnt/flash
-    environment:
-      - INTFTYPE=eth
-      - ETBA=1
-      - SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1
-      - CEOS=1
-      - EOS_PLATFORM=ceoslab
-      - container=docker
-      - MAPETH0=1
+    env_file:
+      - ./ceos.env
+    tmpfs:
+      - /mnt/flash
     ports:
-      - "2002:22" # SSH
-      - "8001:80" # Web Interface
+      - "2202:22" # SSH
+      - "8101:80" # Web Interface
     hostname: router2
     tty: true
     restart: unless-stopped
+    command: /sbin/init systemd.setenv=INTFTYPE=eth systemd.setenv=ETBA=1 systemd.setenv=SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 systemd.setenv=CEOS=1 systemd.setenv=EOS_PLATFORM=ceoslab systemd.setenv=container=docker
 
   # Host 2 generating offset sine wave traffic
   host2:

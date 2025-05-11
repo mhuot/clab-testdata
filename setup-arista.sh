@@ -30,15 +30,27 @@ else
     fi
 
     echo "Loading Arista cEOS image from $CEOS_IMAGE_PATH..."
-    docker image load -i "$CEOS_IMAGE_PATH"
-
-    # Tag the image for easier reference
-    IMAGE_ID=$(docker images --format "{{.ID}}" --filter "dangling=true" | head -n 1)
-    if [ -n "$IMAGE_ID" ]; then
-        echo "Tagging image $IMAGE_ID as ceos:${CEOS_VERSION}"
-        docker tag $IMAGE_ID ceos:${CEOS_VERSION}
+    # Check if it's an XZ compressed file
+    if [[ "$CEOS_IMAGE_PATH" == *.xz ]]; then
+        echo "Detected .xz compression, decompressing and importing..."
+        unxz -c "$CEOS_IMAGE_PATH" > /tmp/ceos-extracted.tar
+        echo "Importing image as ceos:${CEOS_VERSION}..."
+        docker image import /tmp/ceos-extracted.tar ceos:${CEOS_VERSION}
+        rm -f /tmp/ceos-extracted.tar
+    elif [[ "$CEOS_IMAGE_PATH" == *.tar ]]; then
+        echo "Importing image as ceos:${CEOS_VERSION}..."
+        docker image import "$CEOS_IMAGE_PATH" ceos:${CEOS_VERSION}
     else
-        echo "Warning: Could not find the newly loaded image to tag. You may need to tag it manually."
+        echo "Error: Unsupported file format. Please provide a .tar or .tar.xz file."
+        exit 1
+    fi
+
+    # Verify the image was loaded
+    if docker image inspect ceos:${CEOS_VERSION} &>/dev/null; then
+        echo "Successfully loaded image ceos:${CEOS_VERSION}"
+    else
+        echo "Error: Failed to load the cEOS image"
+        exit 1
     fi
 fi
 

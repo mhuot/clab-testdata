@@ -1,0 +1,19 @@
+services:
+  router1:
+    image: ceos:4.34.0F-EFT2
+    command: /sbin/init systemd.setenv=INTFTYPE=eth systemd.setenv=ETBA=1 systemd.setenv=SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 systemd.setenv=CEOS=1 systemd.setenv=EOS_PLATFORM=ceoslab systemd.setenv=container=docker
+    container_name: test-ceos-router1
+    privileged: true
+    cap_add:
+      - NET_ADMIN
+      - SYS_ADMIN
+    env_file:
+      - ./ceos.env
+    tmpfs:
+      - /mnt/flash
+    ports:
+      - "2001:22"
+      - "8000:80"
+    hostname: router1
+    tty: true
+    restart: unless-stopped
