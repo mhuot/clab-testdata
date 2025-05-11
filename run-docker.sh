@@ -13,9 +13,6 @@ docker compose up -d
 echo -e "\nWaiting for services to start (this may take up to 3 minutes)..."
 echo "Arista cEOS devices can take some time to initialize..."
 
-# Configure routers after they've started
-./config-routers.sh
-
 # Wait a bit to ensure traffic generation starts properly
 sleep 10
 
