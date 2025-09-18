@@ -16,12 +16,3 @@
       href: http://localhost:9116
       description: Exporter with the SNMP data
       icon: prometheus.svg
-  - Router1:
-      href: http://192.168.100.10
-      description: Alpine Router 1
-      icon: router.png
-
-  - Router2:
-      href: http://192.168.100.11
-      description: Alpine Router 2
-      icon: router.png

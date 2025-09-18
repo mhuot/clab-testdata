@@ -1,12 +1,12 @@
-# Sine Wave Network Traffic Lab
+# Network Traffic Pattern Lab
 
-This project creates a network topology with two hosts connected through two Arista cEOS routers. The hosts generate traffic in a sine wave pattern, with the traffic patterns offset by 180 degrees. The lab includes monitoring with Homepage, Grafana, Prometheus, and SNMP Exporter for visualizing the traffic patterns.
+This project creates a network topology with two hosts connected through two Arista cEOS routers. The hosts generate realistic network traffic patterns using iperf3 to demonstrate various traffic behaviors. The lab includes monitoring with Homepage, Grafana, Prometheus, and SNMP Exporter for visualizing the traffic patterns.
 
 ## Prerequisites
 
 - Docker installed
 - Docker Compose installed
-- Arista cEOS ARM image (path specified in `.env` file or as a command line argument)
+- Arista cEOS image (path specified in `.env` file or as a command line argument)
 - No special permissions needed - runs entirely on Docker for Mac
 
 ## Environment Setup
@@ -20,7 +20,7 @@ The lab uses environment variables to specify the location and version of the Ar
 
 2. Edit the `.env` file to set the path to your Arista cEOS image:
    ```
-   CEOS_IMAGE_PATH=/path/to/your/cEOSarm-lab-image.tar
+   CEOS_IMAGE_PATH=/path/to/your/cEOS-lab-image.tar
    CEOS_VERSION=4.33.1
    ```
 
@@ -28,30 +28,58 @@ The lab uses environment variables to specify the location and version of the Ar
 
 ## Architecture
 
-```
-                +------------+    +--------------+    +-----------+    +------------+
-                |   Grafana  |    |  Prometheus  |    |    SNMP   |    |  Homepage  |
-                |  Dashboard |    |    Server    |    |  Exporter  |    | Dashboard |
-                +------------+    +--------------+    +-----------+    +------------+
-                      |                 |                  |                 |
-                      |                 |                  |                 |
-                      +-----------------+------------------+-----------------+
-                                                |
-                                                | (Monitoring Network)
-                                                |
-                            +------------------------------------------+
-                            |                                          |
-                            |                                          |
-                +-----------+-------------+            +---------------+-----------+
-                |      Arista cEOS        |            |       Arista cEOS         |
-                | (10.1.1.2, 192.168.0.1) |            | (192.168.0.2, 10.2.2.1)  |
-                +-----------+-------------+            +---------------+-----------+
-                            |                                          |
-                            |                                          |
-                      +-----+------+                            +------+-----+
-                      |   Host 1   |                            |   Host 2   |
-                      | (10.1.1.1) |                            | (10.2.2.2) |
-                      +------------+                            +------------+
+```mermaid
+graph TB
+    subgraph "Monitoring Stack"
+        H[Homepage<br/>:3001]
+        G[Grafana<br/>:3000]
+        P[Prometheus<br/>:9090]
+        S[SNMP Exporter<br/>:9116]
+    end
+    
+    subgraph "Network Topology"
+        subgraph "net2 (172.20.0.0/24)"
+            Host1[Host 1<br/>172.20.0.3<br/>Bursty Traffic]
+            R1_E2[Router 1 - Eth2<br/>172.20.0.1]
+        end
+        
+        subgraph "net1 (172.10.0.0/24)"
+            R1_E1[Router 1 - Eth1<br/>172.10.0.1]
+            R2_E1[Router 2 - Eth1<br/>172.10.0.2]
+        end
+        
+        subgraph "net3 (172.30.0.0/24)"
+            R2_E2[Router 2 - Eth2<br/>172.30.0.1]
+            Host2[Host 2<br/>172.30.0.3<br/>Steady + Spikes]
+        end
+        
+        Host1 -.->|iperf3 traffic| R1_E2
+        R1_E2 --> R1_E1
+        R1_E1 <--> R2_E1
+        R2_E1 --> R2_E2
+        R2_E2 -.->|iperf3 traffic| Host2
+        
+        Host2 -.->|iperf3 traffic| R2_E2
+        R2_E2 --> R2_E1
+        R2_E1 <--> R1_E1
+        R1_E1 --> R1_E2
+        R1_E2 -.->|iperf3 traffic| Host1
+    end
+    
+    P -.->|SNMP Polling| R1_E1
+    P -.->|SNMP Polling| R2_E1
+    P -->|Metrics| G
+    
+    style Host1 fill:#e1f5fe
+    style Host2 fill:#e1f5fe
+    style R1_E1 fill:#fff3e0
+    style R1_E2 fill:#fff3e0
+    style R2_E1 fill:#fff3e0
+    style R2_E2 fill:#fff3e0
+    style G fill:#c8e6c9
+    style P fill:#ffccbc
+    style S fill:#ffccbc
+    style H fill:#d1c4e9
 ```
 
 The topology consists of:
@@ -86,15 +114,13 @@ Install the Docker image with docker image import <tar-filename> <tag>, for exam
 Alternatively, specify the image path directly:
 
 ```bash
-./run-docker.sh /path/to/cEOSarm-lab-image.tar
+./run-docker.sh /path/to/cEOS-lab-image.tar
 ```
 
 This will:
 - Check if the Arista cEOS image is already loaded, and load it if needed
-- Prepare router configurations
 - Start all containers using Docker Compose
-- Configure the routers with IP routing
-- Start the traffic generation scripts on both hosts
+- Start the traffic generation scripts on both hosts using iperf3
 
 2. Monitor the status of the routers and connectivity:
 
@@ -114,13 +140,18 @@ This will:
 - Grafana: http://localhost:3000 (Username: admin, Password: admin)
 - Prometheus: http://localhost:9090
 
-4. Access Arista cEOS Devices:
+4. Access Network Devices:
 
-- Router 1 Web Interface: http://localhost:8000
-- Router 2 Web Interface: http://localhost:8001
-- Router 1 SSH: `ssh admin@localhost -p 2001` (password: admin)
-- Router 2 SSH: `ssh admin@localhost -p 2002` (password: admin)
-- Direct CLI access: `docker exec -it sine-lab-router1 Cli`
+**Arista cEOS Routers:**
+- Router 1 SSH: `ssh arista@localhost -p 2201` (password: arista)
+- Router 2 SSH: `ssh arista@localhost -p 2202` (password: arista)
+- Direct CLI access: `docker exec -it traffic-lab-router1 Cli`
+
+**Alpine Hosts:**
+- Host 1 SSH: `ssh root@localhost -p 2221` (password: password)
+- Host 2 SSH: `ssh root@localhost -p 2222` (password: password)
+- Host 1 iperf3 server: Port 5201
+- Host 2 iperf3 server: Port 5202
 
 5. Destroy the lab when done:
 
@@ -130,11 +161,11 @@ docker compose down
 
 ## Traffic Generation
 
-The hosts generate traffic in sine wave patterns:
-- host1 generates a sine wave pattern with a 60-second period
-- host2 generates a sine wave pattern offset by 180 degrees (completely out of phase)
+The hosts generate realistic network traffic patterns using iperf3:
+- **Host1**: Bursty traffic pattern - alternates between high bandwidth bursts (50-100 Mbps for 10-20 seconds) and idle periods, simulating typical user activity like file transfers or video streaming
+- **Host2**: Steady baseline with periodic spikes - maintains a constant 10 Mbps baseline with occasional traffic spikes (80-120 Mbps), simulating a server with regular traffic and periodic large transfers
 
-This creates an interesting visualization in the monitoring dashboards, with inbound and outbound traffic showing inverse patterns.
+These patterns create realistic network visualizations in the monitoring dashboards, demonstrating common traffic behaviors seen in production networks.
 
 ## Monitoring Stack
 
@@ -169,6 +200,6 @@ The routers are configured with SNMP to provide interface traffic statistics tha
     - `widgets.yaml` - Dashboard widgets
     - `docker.yaml` - Docker integration
 
-## ARM Compatibility
+## Compatibility
 
-This lab is designed to work on ARM-based systems like Apple Silicon Macs, using the Arista cEOS ARM image and multi-architecture containers for all other services.
+This lab is designed to work on both x86_64 and ARM-based systems. For Apple Silicon and other ARM-based systems, use the Arista cEOS ARM image. For x86_64 systems, use the standard cEOS image. All other containers use multi-architecture images for compatibility across platforms.

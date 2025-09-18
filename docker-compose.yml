@@ -22,25 +22,27 @@ networks:
 
 
 services:
-  # Host 1 generating sine wave traffic
+  # Host 1 generating bursty traffic pattern
   host1:
     image: alpine:latest
     platform: linux/arm64
-    container_name: sine-lab-host1
+    container_name: traffic-lab-host1
     privileged: true
     volumes:
       - ./scripts/host1.sh:/host.sh
     command: sh -c "apk add --no-cache openssh && echo 'root:password' | chpasswd && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && ssh-keygen -A && /usr/sbin/sshd && chmod +x /host.sh && /host.sh"
     ports:
       - "2221:22" # SSH
+      - "5201:5201" # iperf3
     restart: unless-stopped
     networks:
-      - net2
+      net2:
+        ipv4_address: 172.20.0.3
 
   # Router 1 - Arista cEOS
   router1:
     image: ceos:${CEOS_VERSION}
-    container_name: sine-lab-router1
+    container_name: traffic-lab-router1
     privileged: true
     cap_add:
       - NET_ADMIN
@@ -59,14 +61,17 @@ services:
     restart: unless-stopped
     command: /sbin/init systemd.setenv=INTFTYPE=eth systemd.setenv=ETBA=1 systemd.setenv=SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 systemd.setenv=CEOS=1 systemd.setenv=EOS_PLATFORM=ceoslab systemd.setenv=container=docker
     networks:
-      - OOB
-      - net1
-      - net2
+      OOB:
+        ipv4_address: 192.168.100.10
+      net1:
+        ipv4_address: 172.10.0.10
+      net2:
+        ipv4_address: 172.20.0.10
 
   # Router 2 - Arista cEOS
   router2:
     image: ceos:${CEOS_VERSION}
-    container_name: sine-lab-router2
+    container_name: traffic-lab-router2
     privileged: true
     cap_add:
       - NET_ADMIN
@@ -85,30 +90,35 @@ services:
     restart: unless-stopped
     command: /sbin/init systemd.setenv=INTFTYPE=eth systemd.setenv=ETBA=1 systemd.setenv=SKIP_ZEROTOUCH_BARRIER_IN_SYSDBINIT=1 systemd.setenv=CEOS=1 systemd.setenv=EOS_PLATFORM=ceoslab systemd.setenv=container=docker
     networks:
-      - OOB
-      - net1
-      - net3
+      OOB:
+        ipv4_address: 192.168.100.11
+      net1:
+        ipv4_address: 172.10.0.11
+      net3:
+        ipv4_address: 172.30.0.11
 
-  # Host 2 generating offset sine wave traffic
+  # Host 2 generating steady traffic with periodic spikes
   host2:
     image: alpine:latest
     platform: linux/arm64
-    container_name: sine-lab-host2
+    container_name: traffic-lab-host2
     privileged: true
     volumes:
       - ./scripts/host2.sh:/host.sh
     command: sh -c "apk add --no-cache openssh && echo 'root:password' | chpasswd && sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && ssh-keygen -A && /usr/sbin/sshd && chmod +x /host.sh && /host.sh"
     ports:
       - "2222:22" # SSH
+      - "5202:5201" # iperf3
     restart: unless-stopped
     networks:
-      - net3
+      net3:
+        ipv4_address: 172.30.0.3
       
   # Grafana for visualization
   grafana:
     image: grafana/grafana:latest
     platform: linux/arm64
-    container_name: sine-lab-grafana
+    container_name: traffic-lab-grafana
     networks:
       net3:
         ipv4_address: 172.30.0.10
@@ -128,7 +138,7 @@ services:
   prometheus:
     image: prom/prometheus:latest
     platform: linux/arm64
-    container_name: sine-lab-prometheus
+    container_name: traffic-lab-prometheus
     networks:
       net3:
         ipv4_address: 172.30.0.11
@@ -145,7 +155,7 @@ services:
   snmp-exporter:
     image: prom/snmp-exporter:latest
     platform: linux/arm64
-    container_name: sine-lab-snmp-exporter
+    container_name: traffic-lab-snmp-exporter
     networks:
       net3:
         ipv4_address: 172.30.0.12
@@ -161,7 +171,7 @@ services:
   homepage:
     image: ghcr.io/gethomepage/homepage:latest
     platform: linux/arm64
-    container_name: sine-lab-homepage
+    container_name: traffic-lab-homepage
     networks:
       net3:
         ipv4_address: 172.30.0.13
